@@ -250,6 +250,7 @@ const START_SCALE = 0.72;     // frame size at entry (1 = full width)
 const START_SCALE_PHONE = 0.6; // phones: starts clearly small and opens out to full width
 const END_IMG_ZOOM = 1.02;    // a hair over 1 so the video's soft edge rows are always clipped (no thin line at the edges)
 const START_IMG_ZOOM = 1.3;   // the picture inside starts this zoomed in and settles to 1
+const START_IMG_ZOOM_PHONE = 1.08; // phones: only a light zoom, so nothing is cropped away while scrolling
 const svcMedia = [...document.querySelectorAll(".svc__media")];
 if (svcMedia.length && !REDUCED) {
   let queued = false;
@@ -268,7 +269,8 @@ if (svcMedia.length && !REDUCED) {
       const p = ease(Math.min(1, Math.max(0, (vh - top) / (vh * span))));
       m.style.transform = `scale(${s0 + (1 - s0) * p})`;
       const media = m.firstElementChild;
-      if (media) media.style.transform = `scale(${START_IMG_ZOOM + (END_IMG_ZOOM - START_IMG_ZOOM) * p})`;
+      const z0 = phone ? START_IMG_ZOOM_PHONE : START_IMG_ZOOM;
+      if (media) media.style.transform = `scale(${z0 + (END_IMG_ZOOM - z0) * p})`;
     });
   };
   const request = () => { if (!queued) { queued = true; requestAnimationFrame(update); } };

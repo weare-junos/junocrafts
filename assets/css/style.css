@@ -547,7 +547,15 @@ h1, h2, h3, p { margin: 0; }
   .svc__media img, .svc__media video { object-position: var(--focus, 80%) center; } /* each video centred on its astronaut */
   #strategy { --focus: 100%; } #design { --focus: 60%; } #creative { --focus: 85%; }
   #content { --focus: 82%; } #motion { --focus: 100%; } #digital { --focus: 85%; }
-  .svc__media::after { inset: -1px; background: linear-gradient(0deg, var(--black) 0%, transparent 3%); } /* only the last few pixels fade, below the feet */
+  .svc__media::after { display: none; }
+  /* phones: the video takes the top 90% of its box and melts into the page at its very bottom edge,
+     so feet that reach the bottom of a clip still have room under them */
+  .svc__media img, .svc__media video {
+    height: 90%;
+    -webkit-mask-image: linear-gradient(to bottom, #000 93%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 93%, transparent 100%);
+  }
+  #motion .svc__media video { height: 84%; } /* his boots reach the very bottom corner of this clip */
   .svc__title { font-size: 28px; margin-bottom: 12px; letter-spacing: .1em; }
   .svc__body p { font-size: 13px; line-height: 1.5; }
   .svc__body .tags { font-size: 12.5px; margin-top: 14px; }
