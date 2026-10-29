@@ -431,7 +431,7 @@ if (form) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || String(data.success) === "false") throw new Error(data.message || res.status);
-      form.reset(); grow(); say(msg("sent", "Thank you! Your message is on its way. We will get back to you soon."));
+      form.reset(); grow(); say(msg("sent", "Thank you! Your message is on its way. We will get back to you soon.")); window.junoTrack?.("generate_lead", { method: "contact_form" });
     } catch {
       say(msg("failed", "Something went wrong. Please write to hello@junocrafts.com directly."), true);
     } finally { btn.disabled = false; }
@@ -500,3 +500,9 @@ if (storyEl && !REDUCED) {
   const fit = () => { if (ringBox.offsetWidth) circle.style.strokeWidth = 100 / ringBox.offsetWidth; };
   if (circle) { fit(); addEventListener("resize", fit); }
 }
+
+/* ---------- analytics events (sent only if the visitor accepted cookies, see analytics.js) ---------- */
+document.querySelectorAll('a[href^="mailto:"]').forEach((a) =>
+  a.addEventListener("click", () => window.junoTrack?.("contact_email_click")));
+document.querySelectorAll(".nav__lang a").forEach((a) =>
+  a.addEventListener("click", () => window.junoTrack?.("language_switch", { language: a.dataset.lang })));
