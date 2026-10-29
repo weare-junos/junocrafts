@@ -1,5 +1,5 @@
 /* Google Analytics 4 behind a cookie banner.
-   Nothing is loaded from Google and no cookie is written until the visitor clicks Accept
+   Nothing is loaded from Google and no cookie is written until the visitor accepts
    (what GDPR in the UK/EU and KVKK in Türkiye ask for). The choice is kept in localStorage.
    To reuse on another site: change GA_ID, STORE_KEY and the texts below; keep the rest. */
 (() => {
@@ -7,15 +7,22 @@
   const STORE_KEY = "juno-analytics";  // "granted" or "denied"
 
   const tr = document.documentElement.lang === "tr";
-  // wording follows the common pattern (e.g. GOV.UK): a short question, one line on why, equal Accept / Reject
   const T = tr ? {
-    title: "Analitik çerezleri kullanabilir miyiz?",
-    text: "Sitemizin nasıl kullanıldığını anlamamıza ve onu geliştirmemize yardımcı olurlar. Bunun için Google Analytics kullanıyoruz.",
-    accept: "Kabul et", decline: "Reddet", more: "Gizlilik Politikası", label: "Çerez tercihi",
+    title: "Çerez Kullanımı",
+    text: "Web sitemizde deneyiminizi geliştirmek ve site kullanımını analiz etmek için çerezler kullanıyoruz. Detaylı bilgi için ",
+    link: "Çerez Politikamızı", after: " inceleyebilirsiniz.",
+    accept: "Tümünü Kabul Et", reject: "Tümünü Reddet", settings: "Çerez Ayarları", save: "Seçimi Kaydet",
+    necessary: "Zorunlu çerezler", necessaryText: "Sitenin çalışması ve çerez tercihinizin hatırlanması için gereklidir.", always: "Her zaman açık",
+    analytics: "Analitik çerezler", analyticsText: "Google Analytics ile ziyaret sayısını ve hangi sayfaların görüntülendiğini ölçer.",
+    label: "Çerez tercihi",
   } : {
-    title: "Can we use analytics cookies?",
-    text: "They help us understand how our website is used, so we can improve it. We use Google Analytics for this.",
-    accept: "Accept", decline: "Reject", more: "Privacy Policy", label: "Cookie choice",
+    title: "Cookies",
+    text: "We use cookies to improve your browsing experience and analyze website traffic. By clicking \u201cAccept All\u201d, you consent to our use of cookies. ",
+    link: "Cookie Policy", after: "",
+    accept: "Accept All", reject: "Reject All", settings: "Cookie Settings", save: "Save Choices",
+    necessary: "Necessary cookies", necessaryText: "Needed for the website to work and to remember your cookie choice.", always: "Always on",
+    analytics: "Analytics cookies", analyticsText: "Google Analytics counts visits and shows which pages are viewed.",
+    label: "Cookie choice",
   };
 
   window.dataLayer = window.dataLayer || [];
@@ -39,7 +46,7 @@
 
   const read = () => { try { return localStorage.getItem(STORE_KEY); } catch (e) { return null; } };
   const save = (v) => { try { localStorage.setItem(STORE_KEY, v); } catch (e) { /* private mode: ask again next time */ } };
-  const clearCookies = () => { // after a "Decline" that follows an earlier "Accept"
+  const clearCookies = () => { // after "Reject" that follows an earlier "Accept"
     const host = location.hostname.replace(/^www\./, "");
     document.cookie.split("; ").map((c) => c.split("=")[0]).filter((n) => n === "_ga" || n.startsWith("_ga_"))
       .forEach((n) => [host, "." + host, ""].forEach((d) => {
@@ -47,50 +54,85 @@
       }));
   };
 
+  const decide = (v) => {
+    save(v);
+    if (v === "granted") load();
+    else if (loaded) { clearCookies(); location.reload(); } // stop GA that was already running
+    else clearCookies();
+    hide();
+  };
+
   let bar = null;
   const hide = () => { if (bar) { bar.remove(); bar = null; } };
-  const show = () => {
-    if (bar || !ready) return;
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text) n.textContent = text; return n; };
+  const button = (cls, text, onClick) => { const b = el("button", cls, text); b.type = "button"; b.addEventListener("click", onClick); return b; };
+
+  // first layer: short notice + Accept All / Reject All / Cookie Settings
+  const notice = () => {
+    bar.replaceChildren();
+    const body = el("div", "consent__body");
+    const p = el("p", "consent__text");
+    p.append(el("strong", "", T.title), T.text);
     const privacy = document.querySelector('a[href$="privacy.html"]');
-    bar = document.createElement("div");
-    bar.className = "consent";
-    bar.setAttribute("role", "dialog");
-    bar.setAttribute("aria-label", T.label);
-    bar.innerHTML = `<p class="consent__text"></p><div class="consent__btns">
-      <button type="button" class="consent__btn consent__btn--ghost" data-choice="denied"></button>
-      <button type="button" class="consent__btn" data-choice="granted"></button></div>`;
-    const p = bar.querySelector(".consent__text");
-    const strong = document.createElement("strong");
-    strong.textContent = T.title;
-    p.append(strong, " " + T.text + " ");
-    if (privacy) {
-      const a = document.createElement("a");
-      a.href = privacy.getAttribute("href");
-      a.textContent = T.more;
-      p.appendChild(a);
+    if (privacy) { const a = el("a", "", T.link); a.href = privacy.getAttribute("href") + "#cookies"; p.append(a); }
+    p.append(T.after);
+    body.append(p);
+    const btns = el("div", "consent__btns");
+    btns.append(
+      button("consent__btn consent__btn--ghost", T.reject, () => decide("denied")),
+      button("consent__btn", T.accept, () => decide("granted")),
+      button("consent__link", T.settings, settings),
+    );
+    bar.append(body, btns);
+  };
+
+  // second layer: one switch per category
+  const settings = () => {
+    bar.replaceChildren();
+    bar.classList.add("consent--settings");
+    const list = el("div", "consent__body");
+    list.append(el("p", "consent__title", T.settings));
+    const row = (name, text, control) => {
+      const r = el("label", "consent__row");
+      const t = el("span", "consent__rowtext");
+      t.append(el("strong", "", name), el("span", "", text));
+      r.append(t, control);
+      return r;
+    };
+    list.append(row(T.necessary, T.necessaryText, el("span", "consent__always", T.always)));
+    const box = el("input", "consent__switch");
+    box.type = "checkbox";
+    box.checked = read() === "granted";
+    box.setAttribute("aria-label", T.analytics);
+    list.append(row(T.analytics, T.analyticsText, box));
+    const btns = el("div", "consent__btns");
+    btns.append(
+      button("consent__btn consent__btn--ghost", T.save, () => decide(box.checked ? "granted" : "denied")),
+      button("consent__btn", T.accept, () => decide("granted")),
+    );
+    bar.append(list, btns);
+  };
+
+  const show = (layer) => {
+    if (!ready) return;
+    if (!bar) {
+      bar = el("div", "consent");
+      bar.setAttribute("role", "dialog");
+      bar.setAttribute("aria-label", T.label);
+      document.body.appendChild(bar);
     }
-    bar.querySelector('[data-choice="granted"]').textContent = T.accept;
-    bar.querySelector('[data-choice="denied"]').textContent = T.decline;
-    bar.addEventListener("click", (e) => {
-      const b = e.target.closest("[data-choice]");
-      if (!b) return;
-      save(b.dataset.choice);
-      if (b.dataset.choice === "granted") load();
-      else if (loaded) { clearCookies(); location.reload(); } // stop GA that was already running
-      else clearCookies();
-      hide();
-    });
-    document.body.appendChild(bar);
+    bar.classList.remove("consent--settings");
+    (layer === "settings" ? settings : notice)();
   };
 
   // "Cookie settings" in the footer opens the banner again
   document.addEventListener("click", (e) => {
-    if (e.target.closest("[data-cookie-settings]")) { e.preventDefault(); show(); }
+    if (e.target.closest("[data-cookie-settings]")) { e.preventDefault(); show("settings"); }
   });
 
   const choice = read();
   if (choice === "granted") load();
   else if (choice !== "denied") {
-    if (document.body) show(); else document.addEventListener("DOMContentLoaded", show);
+    if (document.body) show(); else document.addEventListener("DOMContentLoaded", () => show());
   }
 })();
