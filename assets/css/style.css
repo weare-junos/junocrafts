@@ -505,6 +505,7 @@ h1, h2, h3, p { margin: 0; }
 }
 @keyframes consent-in { from { opacity: 0; transform: translateY(12px); } }
 .consent__text { margin: 0; opacity: .9; }
+.consent__text strong { display: block; font-weight: 500; margin-bottom: 3px; opacity: 1; }
 .consent__text a { color: #fff; }
 .consent__btns { display: flex; gap: 10px; flex: none; }
 .consent__btn {

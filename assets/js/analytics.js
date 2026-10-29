@@ -7,12 +7,15 @@
   const STORE_KEY = "juno-analytics";  // "granted" or "denied"
 
   const tr = document.documentElement.lang === "tr";
+  // wording follows the common pattern (e.g. GOV.UK): a short question, one line on why, equal Accept / Reject
   const T = tr ? {
-    text: "Kaç kişinin siteyi ziyaret ettiğini ve neye baktığını görmek için Google Analytics çerezlerini kullanmak istiyoruz. Yalnızca izin verirseniz.",
+    title: "Analitik çerezleri kullanabilir miyiz?",
+    text: "Sitemizin nasıl kullanıldığını anlamamıza ve onu geliştirmemize yardımcı olurlar. Bunun için Google Analytics kullanıyoruz.",
     accept: "Kabul et", decline: "Reddet", more: "Gizlilik Politikası", label: "Çerez tercihi",
   } : {
-    text: "We'd like to use Google Analytics cookies to see how many people visit and what they look at. Only if you agree.",
-    accept: "Accept", decline: "Decline", more: "Privacy Policy", label: "Cookie choice",
+    title: "Can we use analytics cookies?",
+    text: "They help us understand how our website is used, so we can improve it. We use Google Analytics for this.",
+    accept: "Accept", decline: "Reject", more: "Privacy Policy", label: "Cookie choice",
   };
 
   window.dataLayer = window.dataLayer || [];
@@ -57,7 +60,9 @@
       <button type="button" class="consent__btn consent__btn--ghost" data-choice="denied"></button>
       <button type="button" class="consent__btn" data-choice="granted"></button></div>`;
     const p = bar.querySelector(".consent__text");
-    p.textContent = T.text + " ";
+    const strong = document.createElement("strong");
+    strong.textContent = T.title;
+    p.append(strong, " " + T.text + " ");
     if (privacy) {
       const a = document.createElement("a");
       a.href = privacy.getAttribute("href");
