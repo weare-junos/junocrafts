@@ -497,8 +497,27 @@ if (storyEl && !REDUCED) {
 {
   const ringBox = document.querySelector(".story__ring");
   const circle = ringBox?.querySelector("circle");
-  const fit = () => { if (ringBox.offsetWidth) circle.style.strokeWidth = 100 / ringBox.offsetWidth; };
-  if (circle) { fit(); addEventListener("resize", fit); }
+  const stage = ringBox?.closest(".story__stage");
+  const inner = stage?.querySelector(".story__inner");
+  const fit = () => {
+    // phones: size the ring from the text, not the screen, so its line never crosses the heading or the copy.
+    // The circle is big enough to hold the whole text block; only its top and bottom arcs stay on screen.
+    ringBox.style.cssText = stage.style.cssText = "";
+    if (innerWidth <= 720) {
+      const w = inner.offsetWidth * 0.92, h = inner.offsetHeight;
+      const d = Math.ceil(Math.hypot(w, h) + 28);
+      const gap = Math.ceil((d - h) / 2);
+      stage.style.paddingTop = `${gap + 14}px`;
+      stage.style.paddingBottom = `${gap + 104}px`; // ring's lower half + room for the line into The Crew
+      ringBox.style.cssText = `width:${d}px;top:14px;transform:translateX(-50%)`;
+    }
+    if (ringBox.offsetWidth) circle.style.strokeWidth = 100 / ringBox.offsetWidth;
+  };
+  if (circle) {
+    fit();
+    if (document.fonts) document.fonts.ready.then(fit); // the text height changes once Gotham is in
+    addEventListener("resize", fit);
+  }
 }
 
 /* ---------- analytics events (sent only if the visitor accepted cookies, see analytics.js) ---------- */
